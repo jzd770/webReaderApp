@@ -1,3 +1,4 @@
+//js部分
 (function(){
 	var Util = (function(){
 		var pre = 'reader_'
