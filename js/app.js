@@ -1,4 +1,3 @@
-//js部分
 (function(){
 	var Util = (function(){
 		var pre = 'reader_'
@@ -16,7 +15,7 @@
 				success:function(result){
 					var data = $.base64.decode(result);
 					var json = decodeURIComponent(escape(data));
-					callback(data);
+					callback(json);
 				}
 			})
 		}
@@ -48,16 +47,21 @@
 	
 	function main(){
 		var readerModel = readermodel();
-		readerModel.init();
+		var readerUI = readerBase(Dom.fontsize);
+		
+		readerModel.init(function(data){
+			readerUI(data);
+		});
+		
 		EventHanlder();
 	}
 	function readermodel(){
 		//实现和阅读器相关的数据交互方法
 		var Chapter_id;
-		var init = function(){
+		var init = function(UIcallback){
 			getFictionInfo(function(){
-				getCurChapter(Chapter_id,function(){
-					
+				getCurChapter(Chapter_id,function(data){
+					UIcallback && UIcallback(data);
 				});
 			})
 		}
@@ -65,11 +69,11 @@
 			$.get('data/chapter.json',function(data){
 				//获取章节信息之后的回调
 				Chapter_id = data.chapters[1].chapter_id;
-				callback && callback();
+				callback && callback(data);
 			},'json');
 		}
 		
-		var getCurChapter = function(chapter_id){
+		var getCurChapter = function(chapter_id,callback){
 			$.get('data/data' + chapter_id + '.json',function(data){
 				if(data.result == 0){
 					var url = data.jsonp;
@@ -77,15 +81,26 @@
 						callback && callback(data);
 					});
 				}
-			},'json')
+			},'json');
 		}
 		return {
 			init:init
 		}
 	}
 	
-	function readerBase(){
+	function readerBase(container){
 		//渲染基本的UI结构
+		function parseChapter(jsondata){
+			var jsonobj = JSON.parse(jsondata);
+			var html = '<h4>'+jsonobj.t+'</h4>';
+			for(var i=0;i<jsonobj.p.length;i++){
+				html += '<p>' + jsonobj.p[i] + '</p>';
+			}
+			return html;
+		}
+		return function(data){
+			container.html(parseChapter(data));
+		}
 	}
 	
 	function EventHanlder(){
