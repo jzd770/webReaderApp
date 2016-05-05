@@ -44,10 +44,12 @@
 	
 	var Win = $(window);
 	var Doc = $(document);
+	var readerModel;
+	var readerUI; 
 	
 	function main(){
-		var readerModel = readermodel();
-		var readerUI = readerBase(Dom.fontsize);
+		readerModel = readermodel();
+		readerUI = readerBase(Dom.fontsize);
 		
 		readerModel.init(function(data){
 			readerUI(data);
@@ -58,6 +60,7 @@
 	function readermodel(){
 		//实现和阅读器相关的数据交互方法
 		var Chapter_id;
+		var CharpterTotal;
 		var init = function(UIcallback){
 			getFictionInfo(function(){
 				getCurChapter(Chapter_id,function(data){
@@ -68,8 +71,12 @@
 		var getFictionInfo = function(callback){
 			$.get('data/chapter.json',function(data){
 				//获取章节信息之后的回调
-				Chapter_id = data.chapters[1].chapter_id;
-				callback && callback(data);
+				Chapter_id = Util.getter('lastChapter_id');
+				if(Chapter_id == null){
+					Chapter_id = data.chapters[1].chapter_id;
+				}
+				CharpterTotal = data.chapters.length;
+				callback && callback();
 			},'json');
 		}
 		
@@ -83,8 +90,29 @@
 				}
 			},'json');
 		}
+		var prevChapter = function(UIcallback){
+			Chapter_id = parseInt(Chapter_id,10);
+			if(Chapter_id == 0){
+				return;
+			}
+			Chapter_id -= 1;
+			getCurChapter(Chapter_id,UIcallback);
+			Util.setter('lastChapter_id',Chapter_id);
+		}
+		
+		var nextChapter = function(UIcallback){
+			Chapter_id = parseInt(Chapter_id,10);
+			if(Chapter_id == CharpterTotal){
+				return;
+			}
+			Chapter_id += 1;
+			getCurChapter(Chapter_id,UIcallback);
+			Util.setter('lastChapter_id',Chapter_id);
+		}
 		return {
-			init:init
+			init:init,
+			prevChapter : prevChapter,
+			nextChapter : nextChapter
 		}
 	}
 	
@@ -179,6 +207,18 @@
 		$("#color5").on('click',function(){
 			Dom.fontsize.css('background','#283548');
 			Util.setter('background','#283548');
+		});
+		$('#prev-button').click(function(){
+			readerModel.prevChapter(function(data){
+				readerUI(data);
+			});
+		});
+		$('#next-button').click(function(){
+			readerModel.nextChapter(function(data){
+				readerUI(data);
+			});
+			$("body").scrollTop(0);
+			//点击下一章跳到顶部
 		});
 	}
 	
